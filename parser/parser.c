@@ -17,6 +17,9 @@ void parse_edid(const unsigned char *edid){
     }
 
     printf("Valid EDID header.\n");
+    parse_manufacturer_id(edid);
+    parse_edid_version(edid);
+    //parse_product_code(edid);
 }
 
 int check_header(const unsigned char *edid){
@@ -32,6 +35,24 @@ void parse_edid_version(const unsigned char *edid) {
     uint8_t revision = edid[0x13];  // EDID revision byte
     printf("EDID Version: %d.%d\n", version, revision);
 }
+
+void parse_manufacturer_id(const unsigned char *edid) {
+    uint16_t manufacturer = (edid[8] << 8) | edid[9]; // Combine bytes 8 and 9
+
+    char manufacturer_id[4];
+
+    manufacturer_id[0] = ((manufacturer >> 10) & 0x1F) + 'A' - 1; //ASCII
+    manufacturer_id[1] = ((manufacturer >> 5) & 0x1F) + 'A' - 1;
+    manufacturer_id[2] = (manufacturer & 0x1F) + 'A' - 1;
+    manufacturer_id[3] = '\0';
+
+    printf("Manufacturer ID: %s\n", manufacturer_id);
+}
+
+void parse_product_code(const unsigned char *edid) {
+    
+}
+
 
 int main() {
     /*FILE *file = fopen("edid_dump.bin", "rb"); //testing using the example edid
