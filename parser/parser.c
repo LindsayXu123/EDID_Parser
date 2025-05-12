@@ -19,9 +19,13 @@ void parse_edid(const unsigned char *edid){
     printf("Valid EDID header.\n");
     parse_manufacturer_id(edid);
     parse_edid_version(edid);
-    //parse_product_code(edid);
+    parse_product_code(edid);
+    parse_serial_number(edid);
 }
 
+/*
+* This method checks if the header is a valid header or not
+*/
 int check_header(const unsigned char *edid){
     if (edid[0] != 0x00 || edid[1] != 0xFF || edid[2] != 0xFF || edid[3] != 0xFF || edid[4] != 0xFF || edid[5] != 0xFF || 
         edid[6] != 0xFF || edid[7] != 0x00) {
@@ -30,12 +34,18 @@ int check_header(const unsigned char *edid){
     return 1;  // Valid header
 }
 
+/*
+* This method prints the version and revision
+*/
 void parse_edid_version(const unsigned char *edid) {
     uint8_t version = edid[0x12];  // EDID version byte
     uint8_t revision = edid[0x13];  // EDID revision byte
     printf("EDID Version: %d.%d\n", version, revision);
 }
 
+/*
+* This method prints the manufacturer id
+*/
 void parse_manufacturer_id(const unsigned char *edid) {
     uint16_t manufacturer = (edid[8] << 8) | edid[9]; // Combine bytes 8 and 9
 
@@ -49,8 +59,22 @@ void parse_manufacturer_id(const unsigned char *edid) {
     printf("Manufacturer ID: %s\n", manufacturer_id);
 }
 
+/*
+* This method prints the product code
+*/
 void parse_product_code(const unsigned char *edid) {
-    
+    // Combine the two bytes
+    uint16_t product_code = edid[10] | (edid[11] << 8);
+    printf("Product Code: %u (0x%04X)\n", product_code, product_code);
+}
+
+/*
+* This method prints the serial number 
+*/
+void parse_serial_number(const unsigned char *edid) {
+    // Combine 4 bytes
+    uint32_t serial = edid[12] | (edid[13] << 8) | (edid[14] << 16) | (edid[15] << 24);
+    printf("Serial Number: %u (0x%08X)\n", serial, serial);
 }
 
 
