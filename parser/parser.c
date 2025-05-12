@@ -21,6 +21,7 @@ void parse_edid(const unsigned char *edid){
     parse_edid_version(edid);
     parse_product_code(edid);
     parse_serial_number(edid);
+    parse_manufacture_date(edid);
 }
 
 /*
@@ -75,6 +76,17 @@ void parse_serial_number(const unsigned char *edid) {
     // Combine 4 bytes
     uint32_t serial = edid[12] | (edid[13] << 8) | (edid[14] << 16) | (edid[15] << 24);
     printf("Serial Number: %u (0x%08X)\n", serial, serial);
+}
+
+/*
+* This method prints the manufacture date
+*/
+void parse_manufacture_date(const unsigned char *edid) {
+    uint8_t week = edid[16];
+    uint8_t year_offset = edid[17];
+    uint16_t year = 1990 + year_offset;
+
+    printf("Manufacture Date: Year %u, Week %u\n", year, week);
 }
 
 
