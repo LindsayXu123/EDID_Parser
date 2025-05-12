@@ -18,10 +18,13 @@ void parse_edid(const unsigned char *edid){
 
     printf("Valid EDID header.\n");
     parse_manufacturer_id(edid);
-    parse_edid_version(edid);
     parse_product_code(edid);
     parse_serial_number(edid);
     parse_manufacture_date(edid);
+    parse_edid_version(edid);
+    parse_video_input(edid);
+    parse_screen_size(edid);
+    parse_display_gamma(edid);
 }
 
 /*
@@ -89,6 +92,73 @@ void parse_manufacture_date(const unsigned char *edid) {
     printf("Manufacture Date: Year %u, Week %u\n", year, week);
 }
 
+/*
+* This method prints the video input type
+*/
+void parse_video_input(const unsigned char *edid){
+    uint8_t input = edid[20];
+    
+    if (input & 0x80){
+        printf("Video Input Type: Digital\n");
+
+        uint8_t bit = (input >> 4) & 0x07;
+        uint8_t interface = input & 0x0F;
+
+        const char *bits[] = {"Undefined", "6", "8", "10", "12", "14", "16", "Reserved"};
+
+        const char *interfaces[] = {"Undefined", "DVI", "HDMIa", "HDMIb", "MDDI", "DisplayPort"};
+
+        printf("   Bits per colour: %s\n", bits[bit]);
+        if (interface < 6)
+            printf("   Interface: %s\n", interfaces[interface]);
+        else
+            printf("   Interface: Reserved or Unknown\n");
+    }
+    else{
+        printf("Video Input Type: Analog\n");
+        uint8_t level = (input >> 5) & 0x03;
+        uint8_t setup = (input >> 4) & 0x01;
+        uint8_t sync = input & 0x0F;
+
+        const char *video_levels[] = {
+            "0.700, 0.300 (1.0 V p-p)", "0.714, 0.286 (1.0 V p-p)", "1.000, 0.286 (1.0 V p-p)", "0.700, 0.000 (0.7 V p-p)",
+        };
+
+        printf("   Signal Level: %s\n", video_levels[level]);
+
+        if (setup){
+            printf("Video setup: Blank-to-Black setup or pedestal");
+        }
+        else{
+            printf("Video setup: Blank level = Black level");
+        }
+
+        printf("   Sync Types Supported:\n");
+        if (sync & 0x08) printf("   -Separate Sync H & V Signals\n");
+        if (sync & 0x04) printf("   -Composite Sync H & V Signals\n");
+        if (sync & 0x02) printf("   -Composite Sync Signal on Green Video\n");
+        if (sync & 0x01) printf("   -Serration on Vertical Sync\n");
+    }
+}
+
+/*
+* This method prints the screen size in the format of horizontal size x vertical size
+*/
+void parse_screen_size(const unsigned char *edid){
+    uint8_t horizontal_size = edid[21]; 
+    uint8_t vertical_size = edid[22];
+    printf("Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
+}
+
+/*
+* This method prints the display gamma
+*/
+void parse_display_gamma(const unsigned char *edid) {
+    uint8_t gamma_encoded = edid[23];
+
+    float gamma = (gamma_encoded + 100) / 100.0f;
+    printf("Display Gamma: %.2f\n", gamma);
+}
 
 int main() {
     /*FILE *file = fopen("edid_dump.bin", "rb"); //testing using the example edid
