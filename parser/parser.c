@@ -10,7 +10,25 @@
 
 #define EDID_LENGTH 128
 
+int check_header(const unsigned char *edid);
+void parse_manufacturer_id(const unsigned char *edid);
+void parse_product_code(const unsigned char *edid);
+void parse_serial_number(const unsigned char *edid);
+void parse_manufacture_date(const unsigned char *edid);
+void parse_edid_version(const unsigned char *edid);
+void parse_video_input(const unsigned char *edid);
+void parse_screen_size(const unsigned char *edid);
+void parse_display_gamma(const unsigned char *edid);
+void parse_supported_features(const unsigned char *edid);
+
 void parse_edid(const unsigned char *edid){
+
+    /*FILE *outfile = fopen("output.txt", "w");
+    if (!outfile) {
+        perror("Failed to open output file");
+        return 1;
+    }*/
+
     if (!check_header(edid)) {
         printf("Invalid EDID header.\n");
         return;
@@ -25,6 +43,7 @@ void parse_edid(const unsigned char *edid){
     parse_video_input(edid);
     parse_screen_size(edid);
     parse_display_gamma(edid);
+    parse_supported_features(edid);
 }
 
 /*
@@ -158,6 +177,50 @@ void parse_display_gamma(const unsigned char *edid) {
 
     float gamma = (gamma_encoded + 100) / 100.0f;
     printf("Display Gamma: %.2f\n", gamma);
+}
+
+/*
+* This method prints the supported features
+*/
+void parse_supported_features(const unsigned char *edid) {
+    uint8_t features = edid[24];
+    uint8_t input = edid[20];
+
+    uint8_t power = (features >> 5) & 0x03;
+
+    printf("Supported Features:\n");
+
+    // Power management
+    if (power & 0x04) printf(" - Standby Supported\n");
+    if (features & 0x02) printf(" - Suspend Supported\n");
+    if (features & 0x01) printf(" - Active-Off Supported\n");
+
+    // Display type
+    uint8_t display_type = (features >> 3) & 0x03;
+    const char *display_types_digital[] = {
+        "RGB 4:4:4", "RGB 4:4:4 & YCrCb 4:4:4", "RGB 4:4:4 & YCrCb 4:2:2", "RGB 4:4:4 & YCrCb 4:4:4 & YCrCb 4:2:2"
+    };
+    const char *display_types_analog[] = {
+        "Monochrome or Grayscale", "RGB Color", "Non-RGB Color", "Undefined"
+    };
+    if (input & 0x80){
+        printf(" - Display Type: %s\n", display_types_digital[display_type]);
+    }
+    else{
+        printf(" - Display Type: %s\n", display_types_analog[display_type]);
+    }
+
+    // sRGB color space
+    if (features & 0x04)
+        printf(" - sRGB Color Space Default\n");
+
+    // Preferred timing mode
+    if (features & 0x02)
+        printf(" - Preferred Timing Mode\n");
+
+    // Continuous timings
+    if (features & 0x01)
+        printf(" - Continuous Timing Support\n");
 }
 
 int main() {
