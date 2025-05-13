@@ -10,6 +10,8 @@
 
 #define EDID_LENGTH 128
 
+FILE *out = NULL;
+
 int check_header(const unsigned char *edid);
 void parse_manufacturer_id(const unsigned char *edid);
 void parse_product_code(const unsigned char *edid);
@@ -20,21 +22,24 @@ void parse_video_input(const unsigned char *edid);
 void parse_screen_size(const unsigned char *edid);
 void parse_display_gamma(const unsigned char *edid);
 void parse_supported_features(const unsigned char *edid);
+void parse_colour_characteristics(const unsigned char *edid);
 
 void parse_edid(const unsigned char *edid){
 
-    /*FILE *outfile = fopen("output.txt", "w");
-    if (!outfile) {
+    out = fopen("output.txt", "w");
+    if (!out) {
         perror("Failed to open output file");
-        return 1;
-    }*/
+        return;
+    }
 
     if (!check_header(edid)) {
         printf("Invalid EDID header.\n");
+        if (out) fprintf(out, "Invalid EDID header\n");
         return;
     }
 
     printf("Valid EDID header.\n");
+    if (out) fprintf(out, "Valid EDID header\n");
     parse_manufacturer_id(edid);
     parse_product_code(edid);
     parse_serial_number(edid);
@@ -44,6 +49,7 @@ void parse_edid(const unsigned char *edid){
     parse_screen_size(edid);
     parse_display_gamma(edid);
     parse_supported_features(edid);
+    parse_colour_characteristics(edid);
 }
 
 /*
@@ -64,6 +70,7 @@ void parse_edid_version(const unsigned char *edid) {
     uint8_t version = edid[0x12];  // EDID version byte
     uint8_t revision = edid[0x13];  // EDID revision byte
     printf("EDID Version: %d.%d\n", version, revision);
+    if (out) fprintf(out, "EDID Version: %d.%d\n", version, revision);
 }
 
 /*
@@ -80,6 +87,7 @@ void parse_manufacturer_id(const unsigned char *edid) {
     manufacturer_id[3] = '\0';
 
     printf("Manufacturer ID: %s\n", manufacturer_id);
+    if (out) fprintf(out, "Manufacturer ID: %s\n", manufacturer_id);
 }
 
 /*
@@ -89,6 +97,7 @@ void parse_product_code(const unsigned char *edid) {
     // Combine the two bytes
     uint16_t product_code = edid[10] | (edid[11] << 8);
     printf("Product Code: %u (0x%04X)\n", product_code, product_code);
+    if (out) fprintf(out, "Product Code: %u (0x%04X)\n", product_code, product_code);
 }
 
 /*
@@ -98,6 +107,7 @@ void parse_serial_number(const unsigned char *edid) {
     // Combine 4 bytes
     uint32_t serial = edid[12] | (edid[13] << 8) | (edid[14] << 16) | (edid[15] << 24);
     printf("Serial Number: %u (0x%08X)\n", serial, serial);
+    if (out) fprintf(out, "Serial Number: %u (0x%08X)\n", serial, serial);
 }
 
 /*
@@ -109,6 +119,7 @@ void parse_manufacture_date(const unsigned char *edid) {
     uint16_t year = 1990 + year_offset;
 
     printf("Manufacture Date: Year %u, Week %u\n", year, week);
+    if (out) fprintf(out, "Manufacture Date: Year %u, Week %u\n", year, week);
 }
 
 /*
@@ -119,6 +130,7 @@ void parse_video_input(const unsigned char *edid){
     
     if (input & 0x80){
         printf("Video Input Type: Digital\n");
+        if (out) fprintf(out, "Video Input Type: Digital\n");
 
         uint8_t bit = (input >> 4) & 0x07;
         uint8_t interface = input & 0x0F;
@@ -128,13 +140,19 @@ void parse_video_input(const unsigned char *edid){
         const char *interfaces[] = {"Undefined", "DVI", "HDMIa", "HDMIb", "MDDI", "DisplayPort"};
 
         printf("   Bits per colour: %s\n", bits[bit]);
-        if (interface < 6)
+        if (out) fprintf(out, "   Bits per colour: %s\n", bits[bit]);
+        if (interface < 6){
             printf("   Interface: %s\n", interfaces[interface]);
-        else
+            if (out) fprintf(out, "   Interface: %s\n", interfaces[interface]);
+        }
+        else{
             printf("   Interface: Reserved or Unknown\n");
+            if (out) fprintf(out, "   Interface: Reserved or Unknown\n");
+        }
     }
     else{
         printf("Video Input Type: Analog\n");
+        if (out) fprintf(out, "Video Input Type: Analog\n");
         uint8_t level = (input >> 5) & 0x03;
         uint8_t setup = (input >> 4) & 0x01;
         uint8_t sync = input & 0x0F;
@@ -146,17 +164,32 @@ void parse_video_input(const unsigned char *edid){
         printf("   Signal Level: %s\n", video_levels[level]);
 
         if (setup){
-            printf("Video setup: Blank-to-Black setup or pedestal");
+            printf("Video setup: Blank-to-Black setup or pedestal\n");
+            if (out) fprintf(out, "Video setup: Blank-to-Black setup or pedestal\n");
         }
         else{
-            printf("Video setup: Blank level = Black level");
+            printf("Video setup: Blank level = Black level\n");
+            if (out) fprintf(out, "Video setup: Blank level = Black level\n");
         }
 
         printf("   Sync Types Supported:\n");
-        if (sync & 0x08) printf("   -Separate Sync H & V Signals\n");
-        if (sync & 0x04) printf("   -Composite Sync H & V Signals\n");
-        if (sync & 0x02) printf("   -Composite Sync Signal on Green Video\n");
-        if (sync & 0x01) printf("   -Serration on Vertical Sync\n");
+        if (out) fprintf(out, "   Sync Types Supported:\n");
+        if (sync & 0x08){
+            printf("   -Separate Sync H & V Signals\n");
+            if (out) fprintf(out, "   -Separate Sync H & V Signals\n");
+        }
+        if (sync & 0x04){
+            printf("   -Composite Sync H & V Signals\n");
+            if (out) fprintf(out, "   -Composite Sync H & V Signals\n");
+        }
+        if (sync & 0x02){
+            printf("   -Composite Sync Signal on Green Video\n");
+            if (out) fprintf(out, "   -Composite Sync Signal on Green Video\n");
+        }
+        if (sync & 0x01){
+            printf("   -Serration on Vertical Sync\n");
+            if (out) fprintf(out, "   -Serration on Vertical Sync\n");
+        }
     }
 }
 
@@ -167,6 +200,7 @@ void parse_screen_size(const unsigned char *edid){
     uint8_t horizontal_size = edid[21]; 
     uint8_t vertical_size = edid[22];
     printf("Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
+    if (out) fprintf(out, "Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
 }
 
 /*
@@ -177,6 +211,7 @@ void parse_display_gamma(const unsigned char *edid) {
 
     float gamma = (gamma_encoded + 100) / 100.0f;
     printf("Display Gamma: %.2f\n", gamma);
+    if (out) fprintf(out, "Display Gamma: %.2f\n", gamma);
 }
 
 /*
@@ -189,11 +224,21 @@ void parse_supported_features(const unsigned char *edid) {
     uint8_t power = (features >> 5) & 0x03;
 
     printf("Supported Features:\n");
+    if (out) fprintf(out, "Supported Features:\n");
 
     // Power management
-    if (power & 0x04) printf(" - Standby Supported\n");
-    if (features & 0x02) printf(" - Suspend Supported\n");
-    if (features & 0x01) printf(" - Active-Off Supported\n");
+    if (power & 0x04){
+       printf(" - Standby Supported\n"); 
+       if (out) fprintf(out, " - Standby Supported\n");
+    } 
+    if (features & 0x02){
+        printf(" - Suspend Supported\n");
+        if (out) fprintf(out, " - Suspend Supported\n");
+    }
+    if (features & 0x01){ 
+        printf(" - Active-Off Supported\n");
+        if (out) fprintf(out, " - Active-Off Supported\n");
+    }
 
     // Display type
     uint8_t display_type = (features >> 3) & 0x03;
@@ -205,22 +250,58 @@ void parse_supported_features(const unsigned char *edid) {
     };
     if (input & 0x80){
         printf(" - Display Type: %s\n", display_types_digital[display_type]);
+        if (out) fprintf(out, " - Display Type: %s\n", display_types_digital[display_type]);
     }
     else{
         printf(" - Display Type: %s\n", display_types_analog[display_type]);
+        if (out) fprintf(out,  " - Display Type: %s\n", display_types_analog[display_type]);
     }
 
     // sRGB color space
-    if (features & 0x04)
+    if (features & 0x04){
         printf(" - sRGB Color Space Default\n");
+        if (out) fprintf(out,  " - sRGB Color Space Default\n");
+    }
 
     // Preferred timing mode
-    if (features & 0x02)
+    if (features & 0x02){
         printf(" - Preferred Timing Mode\n");
+        if (out) fprintf(out,  " - Preferred Timing Mode\n");
+    }
 
     // Continuous timings
-    if (features & 0x01)
+    if (features & 0x01){
         printf(" - Continuous Timing Support\n");
+        if (out) fprintf(out,  " - Continuous Timing Support\n");
+    }
+}
+
+void parse_colour_characteristics(const unsigned char *edid) {
+    
+    uint8_t red_green_lo = edid[25];
+    uint8_t blue_white_lo = edid[26];
+
+    
+    uint16_t red_x = ((edid[27] << 2) | ((red_green_lo >> 6) & 0x03));
+    uint16_t red_y = (edid[28] << 2) | ((red_green_lo >> 4) & 0x03);
+    uint16_t green_x = (edid[29] << 2) | ((red_green_lo >> 2) & 0x03);
+    uint16_t green_y = ((edid[30]) << 2) | ((red_green_lo & 0x03));
+
+    uint16_t blue_x =  (edid[31] << 2) | ((blue_white_lo >> 6) & 0x03);
+    uint16_t blue_y = (edid[32] << 2) | ((blue_white_lo >> 4) & 0x03);
+    uint16_t white_x = (edid[33] << 2) | ((blue_white_lo >> 2) & 0x03);
+    uint16_t white_y = (edid[34] << 2) | (blue_white_lo & 0x03);
+
+    printf("Color Characteristics (Chromaticity Coordinates):\n");
+    if (out) fprintf(out,  "Color Characteristics (Chromaticity Coordinates):\n");
+    printf("  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);
+    if (out) fprintf(out,  "  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);
+    printf("  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);
+    if (out) fprintf(out,  "  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);
+    printf("  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);
+    if (out) fprintf(out,  "  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);
+    printf("  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
+    if (out) fprintf(out,  "  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
 }
 
 int main() {
@@ -257,5 +338,6 @@ int main() {
         0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x01, 0x2A
     };
     parse_edid(edid);
+    fclose(out);
 
 }
