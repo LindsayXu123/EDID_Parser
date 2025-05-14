@@ -3,6 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <stdint.h>
+#include <ctype.h>
 
 /**
  * This function is an EDID parser that can take an input of the raw EDID data
@@ -25,10 +26,13 @@ void parse_supported_features(const unsigned char *edid);
 void parse_colour_characteristics(const unsigned char *edid);
 void parse_established_timings(const unsigned char *edid);
 void parse_standard_timings(const unsigned char *edid);
+// void parse_edid(const unsigned char *edid);
+unsigned char *string_to_hex(const char *hex_string);
 
-void parse_edid(const unsigned char *edid)
+void parse_edid(const char *hex_string)
 {
 
+    unsigned char *edid = string_to_hex(hex_string);
     out = fopen("output.txt", "w");
     if (!out)
     {
@@ -59,6 +63,39 @@ void parse_edid(const unsigned char *edid)
     parse_colour_characteristics(edid);
     parse_established_timings(edid);
     parse_standard_timings(edid);
+}
+
+/*
+ * This function converts the hex string to a hex array
+ */
+unsigned char *string_to_hex(const char *hex_string)
+{
+    static unsigned char edid[128];
+    int index = 0;
+
+    while (*hex_string && index < 128)
+    {
+        while (*hex_string && isspace(*hex_string))
+        {
+            hex_string++;
+        }
+
+        if (*hex_string == '\0')
+            break;
+
+        unsigned int byte;
+        if (sscanf(hex_string, "%2x", &byte) == 1)
+        {
+            edid[index++] = (unsigned char)byte;
+            hex_string += 2;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    return edid;
 }
 
 /*
@@ -426,15 +463,19 @@ void parse_established_timings(const unsigned char *edid)
     }
 }
 
-void parse_standard_timings(const unsigned char *edid) {
-    if (out) fprintf(out, "Standard Timings:\n");
+void parse_standard_timings(const unsigned char *edid)
+{
+    if (out)
+        fprintf(out, "Standard Timings:\n");
     printf("Standard Timings:\n");
 
-    for (int i = 0; i < 8; i++) {
+    for (int i = 0; i < 8; i++)
+    {
         uint8_t byte1 = edid[38 + i * 2];
         uint8_t byte2 = edid[39 + i * 2];
 
-        if (byte1 == 0x01 && byte2 == 0x01) {
+        if (byte1 == 0x01 && byte2 == 0x01)
+        {
             continue;
         }
 
@@ -445,16 +486,27 @@ void parse_standard_timings(const unsigned char *edid) {
         const char *aspect_ratios[] = {"16:10", "4:3", "5:4", "16:9"};
 
         int vertical_resolution;
-        switch (aspect) {
-            case 0: vertical_resolution = horizontal_resolution * 10 / 16; break; // 16:10
-            case 1: vertical_resolution = horizontal_resolution * 3 / 4;  break;   // 4:3
-            case 2: vertical_resolution = horizontal_resolution * 4 / 5;  break;   // 5:4
-            case 3: vertical_resolution = horizontal_resolution * 9 / 16; break;   // 16:9
-            default: vertical_resolution = 0; 
+        switch (aspect)
+        {
+        case 0:
+            vertical_resolution = horizontal_resolution * 10 / 16;
+            break; // 16:10
+        case 1:
+            vertical_resolution = horizontal_resolution * 3 / 4;
+            break; // 4:3
+        case 2:
+            vertical_resolution = horizontal_resolution * 4 / 5;
+            break; // 5:4
+        case 3:
+            vertical_resolution = horizontal_resolution * 9 / 16;
+            break; // 16:9
+        default:
+            vertical_resolution = 0;
         }
 
         printf(" - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
-        if (out) fprintf(out, " - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
+        if (out)
+            fprintf(out, " - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
     }
 }
 
@@ -474,23 +526,18 @@ int main()
         fprintf(stderr, "Error: Expected 128 bytes but read %zu\n", bytesRead);
         return 1;
     }*/
-    unsigned char edid[128] = {
-        0x00, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0x00,
-        0x10, 0xAC, 0x79, 0x42, 0x4C, 0x47, 0x5A, 0x42,
-        0x0F, 0x22, 0x01, 0x04, 0xB5, 0x3C, 0x22, 0x78,
-        0x3A, 0xDF, 0x15, 0xAD, 0x50, 0x44, 0xAD, 0x25,
-        0x0F, 0x50, 0x54, 0xA5, 0x4B, 0x00, 0xD1, 0x00,
-        0xD1, 0xC0, 0xB3, 0x00, 0xA9, 0x40, 0x81, 0x80,
-        0x81, 0x00, 0x71, 0x4F, 0xE1, 0xC0, 0x4D, 0xD0,
-        0x00, 0xA0, 0xF0, 0x70, 0x3E, 0x80, 0x30, 0x20,
-        0x35, 0x00, 0x55, 0x50, 0x21, 0x00, 0x00, 0x1A,
-        0x00, 0x00, 0x00, 0xFF, 0x00, 0x32, 0x33, 0x5A,
-        0x53, 0x4A, 0x30, 0x34, 0x0A, 0x20, 0x20, 0x20,
-        0x20, 0x20, 0x00, 0x00, 0x00, 0xFC, 0x00, 0x44,
-        0x45, 0x4C, 0x4C, 0x20, 0x55, 0x32, 0x37, 0x32,
-        0x33, 0x51, 0x45, 0x0A, 0x00, 0x00, 0x00, 0xFD,
-        0x00, 0x17, 0x56, 0x0F, 0x8C, 0x36, 0x01, 0x0A,
-        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x01, 0x2A};
-    parse_edid(edid);
+
+    const char *input1 = "00 FF FF FF FF FF FF 00 10 AC 79 42 4C 47 5A 42 0F 22 01 04 B5 3C 22 78 3A DF 15 AD 50 44 AD 25 0F 50 54 A5 4B 00 D1 00 D1 C0 B3 00 A9 40 81 80 81 00 71 4F E1 C0 4D D0 00 A0 F0 70 3E 80 30 20 35 00 55 50 21 00 00 1A 00 00 00 FF 00 32 33 5A 53 4A 30 34 0A 20 20 20 20 20 00 00 00 FC 00 44 45 4C 4C 20 55 32 37 32 33 51 45 0A 00 00 00 FD 00 17 56 0F 8C 36 01 0A 20 20 20 20 20 20 01 2A     ";
+
+    const char *input2 = "00 FF FF FF FF FF FF 00 09 D1 25 80 45 54 00 00 16 1E 01 04 B5 46 28 78 3E 87 D1 A8 55 4D 9F 25 0E 50 54 A5 6B 80 81 80 81 C0 81 00 A9 C0 B3 00 D1 C0 01 01 01 01 4D D0 00 A0 F0 70 3E 80 30 20 35 00 C4 8F 21 00 00 1A 00 00 00 FF 00 58 35 4C 30 30 32 34 38 30 31 39 0A 20 00 00 00 FD 00 32 4C 1E 8C 3C 00 0A 20 20 20 20 20 20 00 00 00 FC 00 42 65 6E 51 20 50 44 33 32 30 30 55 0A 01 D2";
+
+    const char *input3 = "00 FF FF FF FF FF FF 00 1E 6D 09 5B 24 3F 05 00 09 1E 01 04 B5 3C 22 78 9E 30 35 A7 55 4E A3 26 0F 50 54 21 08 00 71 40 81 80 81 C0 A9 C0 D1 C0 81 00 01 01 01 01 4D D0 00 A0 F0 70 3E 80 30 20 65 0C 58 54 21 00 00 1A 28 68 00 A0 F0 70 3E 80 08 90 65 0C 58 54 21 00 00 1A 00 00 00 FD 00 38 3D 1E 87 38 00 0A 20 20 20 20 20 20 00 00 00 FC 00 4C 47 20 55 6C 74 72 61 20 48 44 0A 20 01 2C";
+    
+    const char *input4 = "00 FF FF FF FF FF FF 00 4C 2D 4D 0C 4A 53 4D 30 0C 1D 01 04 B5 3D 23 78 3A 5F B1 A2 57 4F A2 28 0F 50 54 BF EF 80 71 4F 81 00 81 C0 81 80 A9 C0 B3 00 95 00 01 01 4D D0 00 A0 F0 70 3E 80 30 20 35 00 5F 59 21 00 00 1A 00 00 00 FD 00 38 4B 1E 87 3C 00 0A 20 20 20 20 20 20 00 00 00 FC 00 55 32 38 45 35 39 30 0A 20 20 20 20 20 00 00 00 FF 00 48 54 50 4D 33 30 31 38 39 39 0A 20 20 01 65";
+    
+    const char *input5 = "00 FF FF FF FF FF FF 00 10 AC 79 42 4C 47 5A 42 0F 22 01 04 B5 3C 22 78 3A DF 15 AD 50 44 AD 25 0F 50 54 A5 4B 00 D1 00 D1 C0 B3 00 A9 40 81 80 81 00 71 4F E1 C0 4D D0 00 A0 F0 70 3E 80 30 20 35 00 55 50 21 00 00 1A 00 00 00 FF 00 32 33 5A 53 4A 30 34 0A 20 20 20 20 20 00 00 00 FC 00 44 45 4C 4C 20 55 32 37 32 33 51 45 0A 00 00 00 FD 00 17 56 0F 8C 36 01 0A 20 20 20 20 20 20 01 2A";
+    
+    parse_edid(input2);
+
     fclose(out);
 }
