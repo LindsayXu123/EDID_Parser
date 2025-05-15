@@ -13,6 +13,7 @@
 
 FILE *out = NULL;
 
+// Declaring all functions
 int check_header(const unsigned char *edid);
 void parse_manufacturer_id(const unsigned char *edid);
 void parse_product_code(const unsigned char *edid);
@@ -29,7 +30,12 @@ void parse_standard_timings(const unsigned char *edid);
 // void parse_edid(const unsigned char *edid);
 unsigned char *string_to_hex(const char *hex_string);
 
-void parse_edid(const char *hex_string)
+/**
+ * Parses the EDID data
+ *
+ * @param edid Pointer to the EDID hex string
+ */
+void parse_edid_string(const char *hex_string)
 {
 
     unsigned char *edid = string_to_hex(hex_string);
@@ -65,8 +71,41 @@ void parse_edid(const char *hex_string)
     parse_standard_timings(edid);
 }
 
-/*
- * This function converts the hex string to a hex array
+/**
+ * Parses the EDID data
+ *
+ * @param edid Pointer to the 128-byte EDID data array
+ */
+void parse_edid_array(const unsigned char *edid){
+    if (!check_header(edid))
+    {
+        printf("Invalid EDID header.\n");
+        if (out)
+            fprintf(out, "Invalid EDID header\n");
+        return;
+    }
+
+    printf("Valid EDID header.\n");
+    if (out)
+        fprintf(out, "Valid EDID header\n");
+    parse_manufacturer_id(edid);
+    parse_product_code(edid);
+    parse_serial_number(edid);
+    parse_manufacture_date(edid);
+    parse_edid_version(edid);
+    parse_video_input(edid);
+    parse_screen_size(edid);
+    parse_display_gamma(edid);
+    parse_supported_features(edid);
+    parse_colour_characteristics(edid);
+    parse_established_timings(edid);
+    parse_standard_timings(edid);
+}
+
+/**
+ * Converts the hex string to hex format
+ *
+ * @param edid Pointer to the 128-byte EDID hex string
  */
 unsigned char *string_to_hex(const char *hex_string)
 {
@@ -98,8 +137,11 @@ unsigned char *string_to_hex(const char *hex_string)
     return edid;
 }
 
-/*
- * This method checks if the header is a valid header or not
+/**
+ * Checks whether the EDID header is valid.
+ *
+ * @param edid Pointer to the 128-byte EDID data array
+ * @return 1 if header is valid, 0 otherwise.
  */
 int check_header(const unsigned char *edid)
 {
@@ -111,8 +153,10 @@ int check_header(const unsigned char *edid)
     return 1; // Valid header
 }
 
-/*
- * This method prints the version and revision
+/**
+ * Parses and prints the EDID version and revision.
+ *
+ * @param edid Pointer to the 128-byte EDID data array.
  */
 void parse_edid_version(const unsigned char *edid)
 {
@@ -123,8 +167,10 @@ void parse_edid_version(const unsigned char *edid)
         fprintf(out, "EDID Version: %d.%d\n", version, revision);
 }
 
-/*
- * This method prints the manufacturer id
+/**
+ * Parses and prints the manufacturer ID
+ *
+ * @param edid Pointer to the 128-byte EDID data array
  */
 void parse_manufacturer_id(const unsigned char *edid)
 {
@@ -142,8 +188,10 @@ void parse_manufacturer_id(const unsigned char *edid)
         fprintf(out, "Manufacturer ID: %s\n", manufacturer_id);
 }
 
-/*
- * This method prints the product code
+/**
+ * Parses and prints the product code from the EDID.
+ *
+ * @param edid Pointer to the 128-byte EDID data array
  */
 void parse_product_code(const unsigned char *edid)
 {
@@ -154,8 +202,10 @@ void parse_product_code(const unsigned char *edid)
         fprintf(out, "Product Code: %u (0x%04X)\n", product_code, product_code);
 }
 
-/*
- * This method prints the serial number
+/**
+ * Parses and prints the serial number from the EDID.
+ *
+ * @param edid Pointer to the 128-byte EDID data array
  */
 void parse_serial_number(const unsigned char *edid)
 {
@@ -166,8 +216,10 @@ void parse_serial_number(const unsigned char *edid)
         fprintf(out, "Serial Number: %u (0x%08X)\n", serial, serial);
 }
 
-/*
- * This method prints the manufacture date
+/**
+ * Parses and prints the week and year of manufacture
+ *
+ * @param edid Pointer to the 128-byte EDID data array.
  */
 void parse_manufacture_date(const unsigned char *edid)
 {
@@ -180,8 +232,10 @@ void parse_manufacture_date(const unsigned char *edid)
         fprintf(out, "Manufacture Date: Year %u, Week %u\n", year, week);
 }
 
-/*
- * This method prints the video input type
+/**
+ * Prints the video input type and other details details
+ *
+ * @param edid Pointer to the 128-byte EDID data array
  */
 void parse_video_input(const unsigned char *edid)
 {
@@ -278,7 +332,9 @@ void parse_video_input(const unsigned char *edid)
 }
 
 /*
- * This method prints the screen size in the format of horizontal size x vertical size
+ * Prints the screen size in centimetres in the format of horizontal size x vertical size
+ *
+ * @param edid Pointer to the 128-byte EDID data array
  */
 void parse_screen_size(const unsigned char *edid)
 {
@@ -290,7 +346,9 @@ void parse_screen_size(const unsigned char *edid)
 }
 
 /*
- * This method prints the display gamma
+ * Parses and prints the display gamma
+ *
+ * @param edid Pointer to the 128-byte EDID data array
  */
 void parse_display_gamma(const unsigned char *edid)
 {
@@ -302,9 +360,11 @@ void parse_display_gamma(const unsigned char *edid)
         fprintf(out, "Display Gamma: %.2f\n", gamma);
 }
 
-/*
- * This method prints the supported features
- */
+/**
+ * Parses and prints supported display features
+ *
+ * @param edid Pointer to the 128-byte EDID data array 
+*/
 void parse_supported_features(const unsigned char *edid)
 {
     uint8_t features = edid[24];
@@ -380,6 +440,11 @@ void parse_supported_features(const unsigned char *edid)
     }
 }
 
+/**
+ * Parses and prints the chromaticity coordinates (color characteristics)
+ *
+ * @param edid Pointer to the 128-byte EDID data array.
+ */
 void parse_colour_characteristics(const unsigned char *edid)
 {
 
@@ -413,6 +478,12 @@ void parse_colour_characteristics(const unsigned char *edid)
         fprintf(out, "  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
 }
 
+
+/**
+ * Parses and prints all established display timings supported by the monitor.
+ *
+ * @param edid Pointer to the 128-byte EDID data array.
+ */
 void parse_established_timings(const unsigned char *edid)
 {
     uint8_t timing1 = edid[35];
@@ -463,6 +534,11 @@ void parse_established_timings(const unsigned char *edid)
     }
 }
 
+/**
+ * Parses and prints the standard display timings encoded in the EDID.
+ *
+ * @param edid Pointer to the 128-byte EDID data array.
+ */
 void parse_standard_timings(const unsigned char *edid)
 {
     if (out)
@@ -537,7 +613,7 @@ int main()
     
     const char *input5 = "00 FF FF FF FF FF FF 00 10 AC 79 42 4C 47 5A 42 0F 22 01 04 B5 3C 22 78 3A DF 15 AD 50 44 AD 25 0F 50 54 A5 4B 00 D1 00 D1 C0 B3 00 A9 40 81 80 81 00 71 4F E1 C0 4D D0 00 A0 F0 70 3E 80 30 20 35 00 55 50 21 00 00 1A 00 00 00 FF 00 32 33 5A 53 4A 30 34 0A 20 20 20 20 20 00 00 00 FC 00 44 45 4C 4C 20 55 32 37 32 33 51 45 0A 00 00 00 FD 00 17 56 0F 8C 36 01 0A 20 20 20 20 20 20 01 2A";
     
-    parse_edid(input2);
+    parse_edid_string(input4);
 
     fclose(out);
 }
