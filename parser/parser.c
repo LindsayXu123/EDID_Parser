@@ -11,8 +11,32 @@
 
 #define EDID_LENGTH 128
 
-FILE *out = NULL;
-char edid_out[4096];
+#define DEBUG_PRINT_ENABLED 0
+#if DEBUG_PRINT_ENABLED
+#define DGB_PRINTF printf
+#else
+#define DGB_PRINTF(...) ((void)0)
+#endif
+
+#define FILE_OUTPUT_ENABLED 0
+
+void write_to_file_once(const char *filename, const char *data) {
+#if FILE_OUTPUT_ENABLED
+    FILE *fp = fopen(filename, "w");
+    if (!fp) {
+        perror("Failed to open output file");
+        return;
+    }
+    fprintf(fp, "%s", data);
+    fclose(fp);
+#else
+    (void)filename;
+    (void)data;
+#endif
+}
+
+//FILE *out = NULL;
+char edid_out[1500];
 
 // Declaring all functions
 int check_header(const unsigned char *edid);
@@ -39,28 +63,28 @@ void parse_edid_string(const char *hex_string, char *output)
 {
     int offset = 0;
     unsigned char *edid = string_to_hex(hex_string);
-    out = fopen("output.txt", "w");
+    /*out = fopen("output.txt", "w");
     if (!out)
     {
         perror("Failed to open output file");
         return;
-    }
+    }*/
 
     if (!check_header(edid))
     {
-        printf("Invalid EDID header.\n");
-        if (out)
-            fprintf(out, "Invalid EDID header\n");
+        DGB_PRINTF("Invalid EDID header.\n");
+        /*if (out)
+            fprintf(out, "Invalid EDID header\n");*/
         int written = sprintf(output + offset, "Invalid EDID header\n");
         offset += written;
         return;
     }
 
-    printf("Valid EDID header.\n");
+    DGB_PRINTF("Valid EDID header.\n");
     int written = sprintf(output + offset, "Valid EDID header\n");
     offset += written;
-    if (out)
-        fprintf(out, "Valid EDID header\n");
+    /*if (out)
+        fprintf(out, "Valid EDID header\n");*/
     parse_manufacturer_id(edid, output, &offset);
     parse_product_code(edid, output, &offset);
     parse_serial_number(edid, output, &offset);
@@ -82,21 +106,27 @@ void parse_edid_string(const char *hex_string, char *output)
  */
 void parse_edid_array(const unsigned char *edid, char *output){
     int offset = 0;
+    /*out = fopen("output.txt", "w");
+    if (!out)
+    {
+        perror("Failed to open output file");
+        return;
+    }*/
     if (!check_header(edid))
     {
-        printf("Invalid EDID header.\n");
-        if (out)
-            fprintf(out, "Invalid EDID header\n");
+        DGB_PRINTF("Invalid EDID header.\n");
+        /*if (out)
+            fprintf(out, "Invalid EDID header\n");*/
         int written = sprintf(output + offset, "Invalid EDID header\n");
         offset += written;
         return;
     }
 
-    printf("Valid EDID header.\n");
+    DGB_PRINTF("Valid EDID header.\n");
     int written = sprintf(output + offset, "Valid EDID header\n");
     offset += written;
-    if (out)
-        fprintf(out, "Valid EDID header\n");
+    /*if (out)
+        fprintf(out, "Valid EDID header\n");*/
     parse_manufacturer_id(edid, output, &offset);
     parse_product_code(edid, output, &offset);
     parse_serial_number(edid, output, &offset);
@@ -171,11 +201,11 @@ void parse_edid_version(const unsigned char *edid, char *output, int *offset)
 {
     uint8_t version = edid[0x12];  // EDID version byte
     uint8_t revision = edid[0x13]; // EDID revision byte
-    printf("EDID Version: %d.%d\n", version, revision);
+    DGB_PRINTF("EDID Version: %d.%d\n", version, revision);
     int written = sprintf(output + *offset, "EDID Version: %d.%d\n", version, revision);
     *offset += written;
-    if (out)
-        fprintf(out, "EDID Version: %d.%d\n", version, revision);
+    /*if (out)
+        fprintf(out, "EDID Version: %d.%d\n", version, revision);*/
 }
 
 /**
@@ -194,11 +224,11 @@ void parse_manufacturer_id(const unsigned char *edid, char *output, int *offset)
     manufacturer_id[2] = (manufacturer & 0x1F) + 'A' - 1;
     manufacturer_id[3] = '\0';
 
-    printf("Manufacturer ID: %s\n", manufacturer_id);
+    DGB_PRINTF("Manufacturer ID: %s\n", manufacturer_id);
     int written = sprintf(output + *offset, "Manufacturer ID: %s\n", manufacturer_id);
     *offset += written;
-    if (out)
-        fprintf(out, "Manufacturer ID: %s\n", manufacturer_id);
+    /*if (out)
+        fprintf(out, "Manufacturer ID: %s\n", manufacturer_id);*/
 }
 
 /**
@@ -210,11 +240,11 @@ void parse_product_code(const unsigned char *edid, char *output, int *offset)
 {
     // Combine the two bytes
     uint16_t product_code = edid[10] | (edid[11] << 8);
-    printf("Product Code: %u (0x%04X)\n", product_code, product_code);
+    DGB_PRINTF("Product Code: %u (0x%04X)\n", product_code, product_code);
     int written = sprintf(output + *offset, "Product Code: %u (0x%04X)\n", product_code, product_code);
     *offset += written;
-    if (out)
-        fprintf(out, "Product Code: %u (0x%04X)\n", product_code, product_code);
+    /*if (out)
+        fprintf(out, "Product Code: %u (0x%04X)\n", product_code, product_code);*/
 }
 
 /**
@@ -228,9 +258,9 @@ void parse_serial_number(const unsigned char *edid, char *output, int *offset)
     uint32_t serial = edid[12] | (edid[13] << 8) | (edid[14] << 16) | (edid[15] << 24);
     int written = sprintf(output + *offset, "Serial Number: %u (0x%08X)\n", serial, serial);
     *offset += written;
-    printf("Serial Number: %u (0x%08X)\n", serial, serial);
-    if (out)
-        fprintf(out, "Serial Number: %u (0x%08X)\n", serial, serial);
+    DGB_PRINTF("Serial Number: %u (0x%08X)\n", serial, serial);
+    /*if (out)
+        fprintf(out, "Serial Number: %u (0x%08X)\n", serial, serial);*/
 }
 
 /**
@@ -244,11 +274,11 @@ void parse_manufacture_date(const unsigned char *edid, char *output, int *offset
     uint8_t year_offset = edid[17];
     uint16_t year = 1990 + year_offset;
 
-    printf("Manufacture Date: Year %u, Week %u\n", year, week);
+    DGB_PRINTF("Manufacture Date: Year %u, Week %u\n", year, week);
     int written = sprintf(output + *offset, "Manufacture Date: Year %u, Week %u\n", year, week);
     *offset += written;
-    if (out)
-        fprintf(out, "Manufacture Date: Year %u, Week %u\n", year, week);
+    /*if (out)
+        fprintf(out, "Manufacture Date: Year %u, Week %u\n", year, week);*/
 }
 
 /**
@@ -262,11 +292,11 @@ void parse_video_input(const unsigned char *edid, char *output, int *offset)
 
     if (input & 0x80)
     {
-        printf("Video Input Type: Digital\n");
+        DGB_PRINTF("Video Input Type: Digital\n");
         int written = sprintf(output + *offset, "Video Input Type: Digital\n");
         *offset += written;
-        if (out)
-            fprintf(out, "Video Input Type: Digital\n");
+        /*if (out)
+            fprintf(out, "Video Input Type: Digital\n");*/
 
         uint8_t bit = (input >> 4) & 0x07;
         uint8_t interface = input & 0x0F;
@@ -275,35 +305,35 @@ void parse_video_input(const unsigned char *edid, char *output, int *offset)
 
         const char *interfaces[] = {"Undefined", "DVI", "HDMIa", "HDMIb", "MDDI", "DisplayPort"};
 
-        printf("   Bits per colour: %s\n", bits[bit]);
+        DGB_PRINTF("   Bits per colour: %s\n", bits[bit]);
         written = sprintf(output + *offset, "   Bits per colour: %s\n", bits[bit]);
         *offset += written;
-        if (out)
-            fprintf(out, "   Bits per colour: %s\n", bits[bit]);
+        /*if (out)
+            fprintf(out, "   Bits per colour: %s\n", bits[bit]);*/
         if (interface < 6)
         {
-            printf("   Interface: %s\n", interfaces[interface]);
+            DGB_PRINTF("   Interface: %s\n", interfaces[interface]);
             int written = sprintf(output + *offset, "   Interface: %s\n", interfaces[interface]);
             *offset += written;
-            if (out)
-                fprintf(out, "   Interface: %s\n", interfaces[interface]);
+            /*if (out)
+                fprintf(out, "   Interface: %s\n", interfaces[interface]);*/
         }
         else
         {
-            printf("   Interface: Reserved or Unknown\n");
+            DGB_PRINTF("   Interface: Reserved or Unknown\n");
             int written = sprintf(output + *offset, "   Interface: Reserved or Unknown\n");
             *offset += written;
-            if (out)
-                fprintf(out, "   Interface: Reserved or Unknown\n");
+            /*if (out)
+                fprintf(out, "   Interface: Reserved or Unknown\n");*/
         }
     }
     else
     {
-        printf("Video Input Type: Analog\n");
+        DGB_PRINTF("Video Input Type: Analog\n");
         int written = sprintf(output + *offset, "Video Input Type: Analog\n");
         *offset += written;
-        if (out)
-            fprintf(out, "Video Input Type: Analog\n");
+        /*if (out)
+            fprintf(out, "Video Input Type: Analog\n");*/
         uint8_t level = (input >> 5) & 0x03;
         uint8_t setup = (input >> 4) & 0x01;
         uint8_t sync = input & 0x0F;
@@ -315,63 +345,63 @@ void parse_video_input(const unsigned char *edid, char *output, int *offset)
             "0.700, 0.000 (0.7 V p-p)",
         };
 
-        printf("   Signal Level: %s\n", video_levels[level]);
+        DGB_PRINTF("   Signal Level: %s\n", video_levels[level]);
         written = sprintf(output + *offset, "   Signal Level: %s\n", video_levels[level]);
         *offset += written;
 
         if (setup)
         {
-            printf("Video setup: Blank-to-Black setup or pedestal\n");
+            DGB_PRINTF("Video setup: Blank-to-Black setup or pedestal\n");
             written = sprintf(output + *offset, "Video setup: Blank-to-Black setup or pedestal\n");
             *offset += written;
-            if (out)
-                fprintf(out, "Video setup: Blank-to-Black setup or pedestal\n");
+            /*if (out)
+                fprintf(out, "Video setup: Blank-to-Black setup or pedestal\n");*/
         }
         else
         {
-            printf("Video setup: Blank level = Black level\n");
+            DGB_PRINTF("Video setup: Blank level = Black level\n");
             written = sprintf(output + *offset, "Video setup: Blank level = Black level\n");
             *offset += written;
-            if (out)
-                fprintf(out, "Video setup: Blank level = Black level\n");
+            /*if (out)
+                fprintf(out, "Video setup: Blank level = Black level\n");*/
         }
 
-        printf("   Sync Types Supported:\n");
+        DGB_PRINTF("   Sync Types Supported:\n");
         written = sprintf(output + *offset, "   Sync Types Supported:\n");
         *offset += written;
-        if (out)
-            fprintf(out, "   Sync Types Supported:\n");
+        /*if (out)
+            fprintf(out, "   Sync Types Supported:\n");*/
         if (sync & 0x08)
         {
-            printf("   -Separate Sync H & V Signals\n");
+            DGB_PRINTF("   -Separate Sync H & V Signals\n");
             written = sprintf(output + *offset, "   -Separate Sync H & V Signals\n");
             *offset += written;
-            if (out)
-                fprintf(out, "   -Separate Sync H & V Signals\n");
+            /*if (out)
+                fprintf(out, "   -Separate Sync H & V Signals\n");*/
         }
         if (sync & 0x04)
         {
-            printf("   -Composite Sync H & V Signals\n");
+            DGB_PRINTF("   -Composite Sync H & V Signals\n");
             written = sprintf(output + *offset, "   -Composite Sync H & V Signals\n");
             *offset += written;
-            if (out)
-                fprintf(out, "   -Composite Sync H & V Signals\n");
+            /*if (out)
+                fprintf(out, "   -Composite Sync H & V Signals\n");*/
         }
         if (sync & 0x02)
         {
-            printf("   -Composite Sync Signal on Green Video\n");
+            DGB_PRINTF("   -Composite Sync Signal on Green Video\n");
             written = sprintf(output + *offset, "   -Composite Sync Signal on Green Video\n");
             *offset += written;
-            if (out)
-                fprintf(out, "   -Composite Sync Signal on Green Video\n");
+            /*if (out)
+                fprintf(out, "   -Composite Sync Signal on Green Video\n");*/
         }
         if (sync & 0x01)
         {
-            printf("   -Serration on Vertical Sync\n");
+            DGB_PRINTF("   -Serration on Vertical Sync\n");
             written = sprintf(output + *offset, "   -Serration on Vertical Sync\n");
             *offset += written;
-            if (out)
-                fprintf(out, "   -Serration on Vertical Sync\n");
+            /*if (out)
+                fprintf(out, "   -Serration on Vertical Sync\n");*/
         }
     }
 }
@@ -385,11 +415,11 @@ void parse_screen_size(const unsigned char *edid, char *output, int *offset)
 {
     uint8_t horizontal_size = edid[21];
     uint8_t vertical_size = edid[22];
-    printf("Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
+    DGB_PRINTF("Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
     int written = sprintf(output + *offset, "Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
     *offset += written;
-    if (out)
-        fprintf(out, "Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);
+    /*if (out)
+        fprintf(out, "Screen Size: %d cm x %d cm\n", horizontal_size, vertical_size);*/
 }
 
 /*
@@ -402,11 +432,11 @@ void parse_display_gamma(const unsigned char *edid, char *output, int *offset)
     uint8_t gamma_encoded = edid[23];
 
     float gamma = (gamma_encoded + 100) / 100.0f;
-    printf("Display Gamma: %.2f\n", gamma);
+    DGB_PRINTF("Display Gamma: %.2f\n", gamma);
     int written = sprintf(output + *offset, "Display Gamma: %.2f\n", gamma);
     *offset += written;
-    if (out)
-        fprintf(out, "Display Gamma: %.2f\n", gamma);
+    /*if (out)
+        fprintf(out, "Display Gamma: %.2f\n", gamma);*/
 }
 
 /**
@@ -421,36 +451,36 @@ void parse_supported_features(const unsigned char *edid, char *output, int *offs
 
     uint8_t power = (features >> 5) & 0x03;
 
-    printf("Supported Features:\n");
+    DGB_PRINTF("Supported Features:\n");
     int written = sprintf(output + *offset, "Supported Features:\n");
     *offset += written;
-    if (out)
-        fprintf(out, "Supported Features:\n");
+    /*if (out)
+        fprintf(out, "Supported Features:\n");*/
 
     // Power management
     if (power & 0x04)
     {
-        printf(" - Standby Supported\n");
+        DGB_PRINTF(" - Standby Supported\n");
         written = sprintf(output + *offset, " - Standby Supported\n");
         *offset += written;
-        if (out)
-            fprintf(out, " - Standby Supported\n");
+        /*if (out)
+            fprintf(out, " - Standby Supported\n");*/
     }
     if (features & 0x02)
     {
-        printf(" - Suspend Supported\n");
+        DGB_PRINTF(" - Suspend Supported\n");
         written = sprintf(output + *offset, " - Suspend Supported\n");
         *offset += written;
-        if (out)
-            fprintf(out, " - Suspend Supported\n");
+        /*if (out)
+            fprintf(out, " - Suspend Supported\n");*/
     }
     if (features & 0x01)
     {
-        printf(" - Active-Off Supported\n");
+        DGB_PRINTF(" - Active-Off Supported\n");
         written = sprintf(output + *offset, " - Active-Off Supported\n");
         *offset += written;
-        if (out)
-            fprintf(out, " - Active-Off Supported\n");
+        /*if (out)
+            fprintf(out, " - Active-Off Supported\n");*/
     }
 
     // Display type
@@ -461,49 +491,49 @@ void parse_supported_features(const unsigned char *edid, char *output, int *offs
         "Monochrome or Grayscale", "RGB Color", "Non-RGB Color", "Undefined"};
     if (input & 0x80)
     {
-        printf(" - Display Type: %s\n", display_types_digital[display_type]);
+        DGB_PRINTF(" - Display Type: %s\n", display_types_digital[display_type]);
         written = sprintf(output + *offset, " - Display Type: %s\n", display_types_digital[display_type]);
         *offset += written;
-        if (out)
-            fprintf(out, " - Display Type: %s\n", display_types_digital[display_type]);
+        /*if (out)
+            fprintf(out, " - Display Type: %s\n", display_types_digital[display_type]);*/
     }
     else
     {
-        printf(" - Display Type: %s\n", display_types_analog[display_type]);
+        DGB_PRINTF(" - Display Type: %s\n", display_types_analog[display_type]);
         written = sprintf(output + *offset, " - Display Type: %s\n", display_types_analog[display_type]);
         *offset += written;
-        if (out)
-            fprintf(out, " - Display Type: %s\n", display_types_analog[display_type]);
+        /*if (out)
+            fprintf(out, " - Display Type: %s\n", display_types_analog[display_type]);*/
     }
 
     // sRGB color space
     if (features & 0x04)
     {
-        printf(" - sRGB Color Space Default\n");
+        DGB_PRINTF(" - sRGB Color Space Default\n");
         written = sprintf(output + *offset, " - sRGB Color Space Default\n");
         *offset += written;
-        if (out)
-            fprintf(out, " - sRGB Color Space Default\n");
+        /*if (out)
+            fprintf(out, " - sRGB Color Space Default\n");*/
     }
 
     // Preferred timing mode
     if (features & 0x02)
     {
-        printf(" - Preferred Timing Mode\n");
+        DGB_PRINTF(" - Preferred Timing Mode\n");
         written = sprintf(output + *offset, " - Preferred Timing Mode\n");
         *offset += written;
-        if (out)
-            fprintf(out, " - Preferred Timing Mode\n");
+        /*if (out)
+            fprintf(out, " - Preferred Timing Mode\n");*/
     }
 
     // Continuous timings
     if (features & 0x01)
     {
-        printf(" - Continuous Timing Support\n");
+        DGB_PRINTF(" - Continuous Timing Support\n");
         written = sprintf(output + *offset, " - Continuous Timing Support\n");
         *offset += written;
-        if (out)
-            fprintf(out, " - Continuous Timing Support\n");
+        /*if (out)
+            fprintf(out, " - Continuous Timing Support\n");*/
     }
 }
 
@@ -528,31 +558,31 @@ void parse_colour_characteristics(const unsigned char *edid, char *output, int *
     uint16_t white_x = (edid[33] << 2) | ((blue_white_lo >> 2) & 0x03);
     uint16_t white_y = (edid[34] << 2) | (blue_white_lo & 0x03);
 
-    printf("Color Characteristics (Chromaticity Coordinates):\n");
+    DGB_PRINTF("Color Characteristics (Chromaticity Coordinates):\n");
     int written = sprintf(output + *offset, "Color Characteristics (Chromaticity Coordinates):\n");
     *offset += written;
-    if (out)
-        fprintf(out, "Color Characteristics (Chromaticity Coordinates):\n");
-    printf("  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);
+    /*if (out)
+        fprintf(out, "Color Characteristics (Chromaticity Coordinates):\n");*/
+    DGB_PRINTF("  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);
     written = sprintf(output + *offset, "  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);
     *offset += written;
-    if (out)
-        fprintf(out, "  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);
-    printf("  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);
+    /*if (out)
+        fprintf(out, "  Red   : (X = %.4f, Y = %.4f)\n", red_x / 1024.0, red_y / 1024.0);*/
+    DGB_PRINTF("  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);
     written = sprintf(output + *offset, "  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);
     *offset += written;
-    if (out)
-        fprintf(out, "  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);
-    printf("  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);
+    /*if (out)
+        fprintf(out, "  Green : (X = %.4f, Y = %.4f)\n", green_x / 1024.0, green_y / 1024.0);*/
+    DGB_PRINTF("  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);
     written = sprintf(output + *offset, "  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);
     *offset += written;
-    if (out)
-        fprintf(out, "  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);
-    printf("  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
+    /*if (out)
+        fprintf(out, "  Blue  : (X = %.4f, Y = %.4f)\n", blue_x / 1024.0, blue_y / 1024.0);*/
+    DGB_PRINTF("  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
     written = sprintf(output + *offset, "  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
     *offset += written;
-    if (out)
-        fprintf(out, "  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);
+    /*if (out)
+        fprintf(out, "  White : (X = %.4f, Y = %.4f)\n", white_x / 1024.0, white_y / 1024.0);*/
 }
 
 
@@ -572,11 +602,11 @@ void parse_established_timings(const unsigned char *edid, char *output, int *off
 
         "800x600 @ 72Hz", "800x600 @ 75Hz", "832x624 @ 75Hz", "1024x768 @ 87Hz (interlaced)", "1024x768 @ 60Hz", "1024x768 @ 70Hz", "1024x768 @ 75Hz", "1280x1024 @ 75Hz"};
 
-    printf("Established Timings:\n");
+    DGB_PRINTF("Established Timings:\n");
     int written = sprintf(output + *offset, "Established Timings:\n");
     *offset += written;
-    if (out)
-        fprintf(out, "Established Timings:\n");
+    /*if (out)
+        fprintf(out, "Established Timings:\n");*/
 
     uint8_t mask = 0x80;
 
@@ -584,11 +614,11 @@ void parse_established_timings(const unsigned char *edid, char *output, int *off
     {
         if (timing1 & mask)
         {
-            printf(" - %s\n", established_timings[i]);
+            DGB_PRINTF(" - %s\n", established_timings[i]);
             written = sprintf(output + *offset, " - %s\n", established_timings[i]);
             *offset += written;
-            if (out)
-                fprintf(out, " - %s\n", established_timings[i]);
+            /*if (out)
+                fprintf(out, " - %s\n", established_timings[i]);*/
         }
         mask >>= 1;
     }
@@ -599,11 +629,11 @@ void parse_established_timings(const unsigned char *edid, char *output, int *off
     {
         if (timing2 & mask)
         {
-            printf(" - %s\n", established_timings[8 + i]);
+            DGB_PRINTF(" - %s\n", established_timings[8 + i]);
             written = sprintf(output + *offset, " - %s\n", established_timings[8 + i]);
             *offset += written;
-            if (out)
-                fprintf(out, " - %s\n", established_timings[8 + i]);
+            /*if (out)
+                fprintf(out, " - %s\n", established_timings[8 + i]);*/
         }
         mask >>= 1;
     }
@@ -611,11 +641,11 @@ void parse_established_timings(const unsigned char *edid, char *output, int *off
     // manufacturer timing
     if (timing3 != 0x00)
     {
-        printf(" - Manufacturer reserved timings: 0x%02X\n", timing3);
+        DGB_PRINTF(" - Manufacturer reserved timings: 0x%02X\n", timing3);
         written = sprintf(output + *offset, " - Manufacturer reserved timings: 0x%02X\n", timing3);
         *offset += written;
-        if (out)
-            fprintf(out, " - Manufacturer reserved timings: 0x%02X\n", timing3);
+        /*if (out)
+            fprintf(out, " - Manufacturer reserved timings: 0x%02X\n", timing3);*/
     }
 }
 
@@ -626,9 +656,9 @@ void parse_established_timings(const unsigned char *edid, char *output, int *off
  */
 void parse_standard_timings(const unsigned char *edid, char *output, int *offset)
 {
-    if (out)
-        fprintf(out, "Standard Timings:\n");
-    printf("Standard Timings:\n");
+    /*if (out)
+        fprintf(out, "Standard Timings:\n");*/
+    DGB_PRINTF("Standard Timings:\n");
     int written = sprintf(output + *offset, "Standard Timings:\n");
     *offset += written;
 
@@ -667,11 +697,11 @@ void parse_standard_timings(const unsigned char *edid, char *output, int *offset
             vertical_resolution = 0;
         }
 
-        printf(" - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
+        DGB_PRINTF(" - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
         written = sprintf(output + *offset, " - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
         *offset += written;
-        if (out)
-            fprintf(out, " - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);
+        /*if (out)
+            fprintf(out, " - %d x %d (%s) @ %dHz\n", horizontal_resolution, vertical_resolution, aspect_ratios[aspect], vertical_frequency);*/
     }
 }
 
@@ -703,7 +733,10 @@ int main()
     const char *input5 = "00 FF FF FF FF FF FF 00 10 AC 79 42 4C 47 5A 42 0F 22 01 04 B5 3C 22 78 3A DF 15 AD 50 44 AD 25 0F 50 54 A5 4B 00 D1 00 D1 C0 B3 00 A9 40 81 80 81 00 71 4F E1 C0 4D D0 00 A0 F0 70 3E 80 30 20 35 00 55 50 21 00 00 1A 00 00 00 FF 00 32 33 5A 53 4A 30 34 0A 20 20 20 20 20 00 00 00 FC 00 44 45 4C 4C 20 55 32 37 32 33 51 45 0A 00 00 00 FD 00 17 56 0F 8C 36 01 0A 20 20 20 20 20 20 01 2A";
     
     parse_edid_string(input1, edid_out);
-    printf("---- Edid parsed in memory: \n %s \n -----", edid_out);
+    printf("----- Edid parsed in memory ----- \n %s \n --------------------", edid_out);
+    /*if (out)
+        fprintf(out, edid_out);
 
-    fclose(out);
+    fclose(out);*/
+    write_to_file_once("output.txt", edid_out);
 }
