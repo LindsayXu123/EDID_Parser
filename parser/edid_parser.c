@@ -305,14 +305,11 @@ void parse_display_gamma(const unsigned char *edid, char *output, int *offset) {
     uint8_t gamma_encoded = edid[23];
     float gamma = (gamma_encoded + 100) / 100.0f;
 
-    DGB_PRINTF("Display Gamma: %.2f\n", gamma);
+    char gamma_str[10];
+    float_to_string(gamma, gamma_str);
+    DGB_PRINTF("Display Gamma: %s\n", gamma_str);
 
-    int written = sprintf(output + *offset, "Display Gamma: ");
-    *offset += written;
-
-    float_to_string(gamma, output, offset);
-    
-    written = sprintf(output + *offset, "\n");
+    int written = sprintf(output + *offset, "Display Gamma: %s \n", gamma_str);
     *offset += written;
 }
 
@@ -419,32 +416,48 @@ void parse_colour_characteristics(const unsigned char *edid, char *output, int *
     uint16_t white_y = (edid[34] << 2) | (blue_white_lo & 0x03);
 
     float red_x_f   = red_x / 1024.0f;
+    char red_x_s[10];
+    float_to_string(red_x_f, red_x_s);
     float red_y_f   = red_y / 1024.0f;
+    char red_y_s[10];
+    float_to_string(red_y_f, red_y_s);
     float green_x_f = green_x / 1024.0f;
+    char green_x_s[10];
+    float_to_string(green_x_f, green_x_s);
     float green_y_f = green_y / 1024.0f;
+    char green_y_s[10];
+    float_to_string(green_y_f, green_y_s);
     float blue_x_f  = blue_x / 1024.0f;
+    char blue_x_s[10];
+    float_to_string(blue_x_f, blue_x_s);
     float blue_y_f  = blue_y / 1024.0f;
+    char blue_y_s[10];
+    float_to_string(blue_y_f, blue_y_s);
     float white_x_f = white_x / 1024.0f;
+    char white_x_s[10];
+    float_to_string(white_x_f, white_x_s);
     float white_y_f = white_y / 1024.0f;
+    char white_y_s[10];
+    float_to_string(white_y_f, white_y_s);
 
     DGB_PRINTF("Color Characteristics (Chromaticity Coordinates):\n");
     int written = sprintf(output + *offset, "Color Characteristics (Chromaticity Coordinates):\n");
     *offset += written;
 
-    DGB_PRINTF("  Red   : (X = %.4f, Y = %.4f)\n", red_x_f, red_y_f);
-    written = sprintf(output + *offset, "  Red   : (X = %.4f, Y = %.4f)\n", red_x_f, red_y_f);
+    DGB_PRINTF("  Red   : (X = %s, Y = %s)\n", red_x_s, red_y_s);
+    written = sprintf(output + *offset, "  Red   : (X = %s, Y = %s)\n", red_x_s, red_y_s);
     *offset += written;
 
-    DGB_PRINTF("  Green : (X = %.4f, Y = %.4f)\n", green_x_f, green_y_f);
-    written = sprintf(output + *offset, "  Green : (X = %.4f, Y = %.4f)\n", green_x_f, green_y_f);
+    DGB_PRINTF("  Green : (X = %s, Y = %s)\n", green_x_s, green_y_s);
+    written = sprintf(output + *offset, "  Green : (X = %s, Y = %s)\n", green_x_s, green_y_s);
     *offset += written;
 
-    DGB_PRINTF("  Blue  : (X = %.4f, Y = %.4f)\n", blue_x_f, blue_y_f);
-    written = sprintf(output + *offset, "  Blue  : (X = %.4f, Y = %.4f)\n", blue_x_f, blue_y_f);
+    DGB_PRINTF("  Blue  : (X = %s, Y = %s)\n", blue_x_s, blue_y_s);
+    written = sprintf(output + *offset, "  Blue  : (X = %s, Y = %s)\n", blue_x_s, blue_y_s);
     *offset += written;
 
-    DGB_PRINTF("  White : (X = %.4f, Y = %.4f)\n", white_x_f, white_y_f);
-    written = sprintf(output + *offset, "  White : (X = %.4f, Y = %.4f)\n", white_x_f, white_y_f);
+    DGB_PRINTF("  White : (X = %s, Y = %s)\n", white_x_s, white_y_s);
+    written = sprintf(output + *offset, "  White : (X = %s, Y = %s)\n", white_x_s, white_y_s);
     *offset += written;
 }
 
@@ -582,11 +595,9 @@ void write_parsed_edid_data(unsigned int tx_id, const char *parsed_output)
     DGB_PRINTF("Parsed output: %s", parsed_output);
 }
 
-int float_to_string(float value, char *output, int *offset) {
+void float_to_string(float value, char* float_string) {
     int int_part = (int)value;
-    int frac_part = (int)((value - int_part) * 1000);
+    int frac_part = (int)((value - int_part) * 10000);
 
-    int written = snprintf(output + *offset, 32, "%d.%03d", int_part, frac_part);
-    *offset += written;
-    return written;
+    sprintf(float_string, "%d.%04d", int_part, frac_part);
 }
