@@ -79,6 +79,16 @@ void parse_edid_array(const unsigned char *edid, char *output){
     parse_established_timings(edid, output, &offset);
     parse_standard_timings(edid, output, &offset);
 
+    if (verify_edid_checksum(edid)) {
+        DGB_PRINTF("Checksum is valid.\n");
+        written = sprintf(output + offset, "Checksum is valid\n");
+        offset += written;
+    } else {
+        DGB_PRINTF("Checksum is invalid.\n");
+        written = sprintf(output + offset, "Checksum is invalid\n");
+        offset += written;
+    }
+
     DGB_PRINTF_ALL("%s", edid_output);
 }
 
@@ -600,4 +610,18 @@ void float_to_string(float value, char* float_string) {
     int frac_part = (int)((value - int_part) * 10000);
 
     sprintf(float_string, "%d.%04d", int_part, frac_part);
+}
+
+int verify_edid_checksum(const unsigned char *edid)
+{
+    uint8_t sum = 0;
+    for (int i = 0; i < EDID_LENGTH; ++i) {
+        sum += edid[i];
+    }
+
+    if (sum % 256 == 0) {
+        return 1; // Valid
+    } else {
+        return 0; // Invalid
+    }
 }
