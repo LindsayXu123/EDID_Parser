@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
-#include "../include/parser.h"
+#include "parser.h"
 /**
  * This function is an EDID parser that can take an input of the raw EDID data
  */
